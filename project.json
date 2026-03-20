@@ -1,0 +1,8 @@
+{
+  "engine": "cocos-creator-js",
+  "packages": "packages",
+  "name": "BezierCurveLearn",
+  "id": "0dedace3-d8b5-4954-a6e0-37e6a3bcbd76",
+  "version": "2.4.10",
+  "isNew": false
+}
