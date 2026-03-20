@@ -40,6 +40,12 @@ export class BezierCurve2 extends cc.Component {
 
     protected onLoad(): void {
         this._drawMoveLine();
+        // 监听全局事件
+        cc.systemEvent.on('drawline', this._drawMoveLine, this);
+    }
+
+    protected onDestroy(): void {
+        cc.systemEvent.off('drawline', this._drawMoveLine, this);
     }
 
 
