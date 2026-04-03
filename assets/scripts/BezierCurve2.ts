@@ -24,6 +24,9 @@ export class BezierCurve2 extends cc.Component {
     @property({ tooltip: CC_DEV && '是否为二阶贝塞尔曲线', type: cc.Boolean })
     private isTwoOrder: boolean = true;
 
+    @property({ type: cc.Node, tooltip: CC_DEV ? '子弹父节点' : undefined })
+    private bulletParent: cc.Node = null!;
+
     /**
      * 记录上次的开始位置
      */
@@ -54,6 +57,12 @@ export class BezierCurve2 extends cc.Component {
     }
 
 
+    /**
+     * 绘制贝塞尔曲线移动路径
+     * 检查控制点位置是否发生变化，如果未变化则跳过绘制
+     * 根据 isTwoOrder 标志绘制二阶或三阶贝塞尔曲线
+     * @private
+     */
     private _drawMoveLine(): void {
         const startPos = this.startPoint.getPosition();
         const endPos = this.endPoint.getPosition();
@@ -232,7 +241,7 @@ export class BezierCurve2 extends cc.Component {
     //#endregion 三阶
 
     //#region 二阶
-    private startBezierMovement(targetNode: cc.Node, startPos: cc.Vec2, control1: cc.Vec2, endPos: cc.Vec2): void {
+    private startBezierMovement(targetNode: cc.Node, startPos: cc.Vec2, control1: cc.Vec2, endPos: cc.Vec2, onComplete?: () => void): void {
 
         // 使用虚拟对象进行tween
         const tweenObj = { progress: 0 };
@@ -252,14 +261,22 @@ export class BezierCurve2 extends cc.Component {
                     // 转换为度数并设置旋转
                     const degrees = angle * 180 / Math.PI;
                     targetNode.angle = degrees;
-                },
-                onComplete: () => {
-                    console.log('贝塞尔曲线运动完成');
                 }
+            })
+            .call(() => {
+                onComplete?.();
             })
             .start();
     }
 
+    /**
+     * 计算二次贝塞尔曲线上给定参数 t 的点坐标
+     * @param {number} t - 插值参数，范围 [0, 1]，表示在曲线上的位置
+     * @param {cc.Vec2} p0 - 曲线的起始控制点
+     * @param {cc.Vec2} p1 - 曲线的中间控制点
+     * @param {cc.Vec2} p2 - 曲线的结束控制点
+     * @returns {cc.Vec2} 曲线上对应参数 t 的点坐标
+     */
     private Bezier_Quadratic(t: number, p0: cc.Vec2, p1: cc.Vec2, p2: cc.Vec2): cc.Vec2 {
         // 确保t在[0,1]范围内
         t = Math.min(Math.max(t, 0), 1);
@@ -276,6 +293,14 @@ export class BezierCurve2 extends cc.Component {
         return new cc.Vec2(x, y);
     }
 
+    /**
+     * 计算二次贝塞尔曲线在参数 t 处的切线向量
+     * @param {number} t - 曲线参数，取值范围 [0, 1]
+     * @param {cc.Vec2} p0 - 曲线的起始控制点
+     * @param {cc.Vec2} p1 - 曲线的控制点
+     * @param {cc.Vec2} p2 - 曲线的结束控制点
+     * @returns {cc.Vec2} 归一化后的切线向量
+     */
     private calculateQuadraticBezierTangent(t: number, p0: cc.Vec2, p1: cc.Vec2, p2: cc.Vec2): cc.Vec2 {
         // 二次贝塞尔曲线
         // 原式：B(t) = (1-t)²P₀ + 2t(1-t)P₁ + t²P₂
@@ -287,4 +312,38 @@ export class BezierCurve2 extends cc.Component {
         return new cc.Vec2(dx, dy).normalize();
     }
     //#endregion 二阶
+
+    private _randomPoint() {
+        // 计算中点
+        const midPoint = this.startPoint.getPosition().clone().lerp(this.endPoint.getPosition(), 0.5);
+        // 计算方向向量（从起点到终点）
+        const direction = this.endPoint.getPosition().clone().subtract(this.startPoint.getPosition()).normalize();
+        // 计算垂直向量（垂直于连接线）
+        const perpendicular = new cc.Vec2(-direction.y, direction.x).normalize();
+        // 在垂直方向上随机偏移（实际上我们只需要上下方向，所以用(0,1,0)或者计算出的垂直向量）
+        const randomHeight = Math.random() * 1200 - 600;
+        // 控制点位于中点正上方（或正下方）的垂直线上
+        const control1 = midPoint.clone().add(new cc.Vec2(0, randomHeight));
+
+        const newNode = cc.instantiate(this.bulletNode);
+        newNode.parent = this.bulletParent;
+
+        this.startBezierMovement(newNode, this.startPoint.getPosition(), control1, this.endPoint.getPosition(), () => {
+            this.scheduleOnce(() => {
+                newNode.destroy();
+            }, 1);
+        });
+    }
+
+    private _manyPoints() {
+        for (let i = 0; i < 10; i++) {
+            this._randomPoint();
+        }
+    }
+
+    //#region 事件监听
+    private onClickManyPoints(): void {
+        this._manyPoints();
+    }
+    //#region 事件监听
 }
