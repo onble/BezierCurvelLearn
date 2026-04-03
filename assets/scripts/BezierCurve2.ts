@@ -92,6 +92,10 @@ export class BezierCurve2 extends cc.Component {
 
     }
 
+    /**
+     * 根据当前控制点的位置，启动子弹沿贝塞尔曲线的运动
+     * @private
+     */
     private _arrowMove(): void {
         const startPos = this.startPoint.getPosition();
         const endPos = this.endPoint.getPosition();
@@ -241,6 +245,15 @@ export class BezierCurve2 extends cc.Component {
     //#endregion 三阶
 
     //#region 二阶
+    /**
+     * 使用二次贝塞尔曲线控制节点沿曲线运动，同时根据切线方向调整节点角度
+     * @param {cc.Node} targetNode - 需要移动的目标节点
+     * @param {cc.Vec2} startPos - 贝塞尔曲线的起始位置
+     * @param {cc.Vec2} control1 - 贝塞尔曲线的控制点
+     * @param {cc.Vec2} endPos - 贝塞尔曲线的结束位置
+     * @param {() => void} [onComplete] - 动画完成时的回调函数
+     * @returns {void}
+     */
     private startBezierMovement(targetNode: cc.Node, startPos: cc.Vec2, control1: cc.Vec2, endPos: cc.Vec2, onComplete?: () => void): void {
 
         // 使用虚拟对象进行tween
@@ -313,6 +326,10 @@ export class BezierCurve2 extends cc.Component {
     }
     //#endregion 二阶
 
+    /**
+     * 生成随机控制点并创建子弹节点进行贝塞尔曲线运动
+     * @returns {cc.Vec2} 生成的控制点坐标
+     */
     private _randomPoint(): cc.Vec2 {
         // 计算中点
         const midPoint = this.startPoint.getPosition().clone().lerp(this.endPoint.getPosition(), 0.5);
@@ -336,6 +353,11 @@ export class BezierCurve2 extends cc.Component {
         return control1;
     }
 
+    /**
+     * 绘制多条随机二次贝塞尔曲线
+     * @private
+     * @returns {void}
+     */
     private _manyPoints() {
         const graphics = this.graphics;
         graphics.clear();
@@ -347,9 +369,28 @@ export class BezierCurve2 extends cc.Component {
         graphics.stroke();
     }
 
+    /**
+     * 清空图形并随机生成多个雪点
+     * 通过清除现有图形，并在随机延迟后调用随机点生成方法来创建雪点效果
+     */
+    private _snowPoints() {
+        const graphics = this.graphics;
+        graphics.clear();
+        // 去掉辅助线，再随机起始时间
+        for (let i = 0; i < 10; i++) {
+            this.scheduleOnce(() => {
+                this._randomPoint();
+            }, Math.random() * 1);
+        }
+    }
+
     //#region 事件监听
     private onClickManyPoints(): void {
         this._manyPoints();
+    }
+
+    private onClickSnowPoints(): void {
+        this._snowPoints();
     }
     //#region 事件监听
 }
