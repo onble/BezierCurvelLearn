@@ -164,6 +164,7 @@ export class BezierCurve2 extends cc.Component {
 
     }
 
+    //#region 三阶
     /**
      * 沿三次贝塞尔曲线移动节点
      */
@@ -228,6 +229,7 @@ export class BezierCurve2 extends cc.Component {
 
         return new cc.Vec2(dx, dy).normalize();
     }
+    //#endregion 三阶
 
     //#region 二阶
     private startBezierMovement(targetNode: cc.Node, startPos: cc.Vec2, control1: cc.Vec2, endPos: cc.Vec2): void {
@@ -237,8 +239,8 @@ export class BezierCurve2 extends cc.Component {
 
         cc.tween(tweenObj)
             .to(1, { progress: 1 }, {
-                progress: (target: any, ratio: number) => {
-                    const t = target.progress;
+                progress: (start: number, end: number, current: undefined, ratio: number) => {
+                    const t = start + (end - start) * ratio;
                     // 计算当前位置
                     const position = this.Bezier_Quadratic(t, startPos, control1, endPos);
                     targetNode.setPosition(position);
@@ -249,7 +251,7 @@ export class BezierCurve2 extends cc.Component {
                     const angle = Math.atan2(tangent.y, tangent.x);
                     // 转换为度数并设置旋转
                     const degrees = angle * 180 / Math.PI;
-                    targetNode.setRotation(degrees);
+                    targetNode.angle = degrees;
                 },
                 onComplete: () => {
                     console.log('贝塞尔曲线运动完成');
