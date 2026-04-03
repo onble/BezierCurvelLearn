@@ -313,7 +313,7 @@ export class BezierCurve2 extends cc.Component {
     }
     //#endregion 二阶
 
-    private _randomPoint() {
+    private _randomPoint(): cc.Vec2 {
         // 计算中点
         const midPoint = this.startPoint.getPosition().clone().lerp(this.endPoint.getPosition(), 0.5);
         // 计算方向向量（从起点到终点）
@@ -333,12 +333,18 @@ export class BezierCurve2 extends cc.Component {
                 newNode.destroy();
             }, 1);
         });
+        return control1;
     }
 
     private _manyPoints() {
+        const graphics = this.graphics;
+        graphics.clear();
         for (let i = 0; i < 10; i++) {
-            this._randomPoint();
+            graphics.moveTo(this.startPoint.x, this.startPoint.y);
+            const control1 = this._randomPoint();
+            graphics.quadraticCurveTo(control1.x, control1.y, this.endPoint.x, this.endPoint.y);
         }
+        graphics.stroke();
     }
 
     //#region 事件监听
