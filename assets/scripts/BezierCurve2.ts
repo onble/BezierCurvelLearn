@@ -45,10 +45,12 @@ export class BezierCurve2 extends cc.Component {
         this._drawMoveLine();
         // 监听全局事件
         cc.systemEvent.on('drawline', this._drawMoveLine, this);
+        cc.systemEvent.on('arrowMove', this._arrowMove, this);
     }
 
     protected onDestroy(): void {
         cc.systemEvent.off('drawline', this._drawMoveLine, this);
+        cc.systemEvent.off('arrowMove', this._arrowMove, this);
     }
 
 
@@ -74,13 +76,26 @@ export class BezierCurve2 extends cc.Component {
         if (this.isTwoOrder) {
             // 绘制二阶贝塞尔曲线
             this.drawBezierPath(startPos, controlPos1, endPos);
-            this.startBezierMovement(this.bulletNode, startPos, controlPos1, endPos);
         } else {
             // 绘制三阶贝塞尔曲线
             this.drawBezierPath(startPos, controlPos1, controlPos2, endPos);
-            this.startCubicBezierMovement(this.bulletNode, startPos, controlPos1, controlPos2, endPos);
         }
 
+    }
+
+    private _arrowMove(): void {
+        const startPos = this.startPoint.getPosition();
+        const endPos = this.endPoint.getPosition();
+        const controlPos1 = this.controlPoint.getPosition();
+        const controlPos2 = this.controlPoint2.getPosition();
+
+        if (this.isTwoOrder) {
+            // 绘制二阶贝塞尔曲线
+            this.startBezierMovement(this.bulletNode, startPos, controlPos1, endPos);
+        } else {
+            // 绘制三阶贝塞尔曲线
+            this.startCubicBezierMovement(this.bulletNode, startPos, controlPos1, controlPos2, endPos);
+        }
     }
 
     /**

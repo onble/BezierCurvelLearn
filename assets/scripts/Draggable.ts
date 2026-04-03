@@ -51,5 +51,6 @@ export default class Draggable extends cc.Component {
     private _onTouchEnd(event: cc.Event.EventTouch) {
         this._isDragging = false;
         cc.systemEvent.emit('drawline');
+        cc.systemEvent.emit('arrowMove');
     }
 }
