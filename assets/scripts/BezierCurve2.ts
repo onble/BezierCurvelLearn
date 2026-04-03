@@ -93,9 +93,25 @@ export class BezierCurve2 extends cc.Component {
         const graphics = this.graphics;
 
         graphics.clear();
+
+        // 绘制控制线
         this.graphics.lineWidth = 5;
         this.graphics.strokeColor = cc.Color.BLUE;
 
+        // 起点到控制点
+        this.graphics.moveTo(p0.x, p0.y);
+        this.graphics.lineTo(p1.x, p1.y);
+        this.graphics.stroke();
+
+        // 控制点到终点
+        this.graphics.moveTo(p1.x, p1.y);
+        this.graphics.lineTo(p2.x, p2.y);
+
+
+        this.graphics.stroke();
+        this.graphics.strokeColor = cc.Color.BLUE;
+
+        this.graphics.strokeColor = cc.Color.GREEN;
         graphics.moveTo(p0.x, p0.y);
         if (p3) {
             graphics.bezierCurveTo(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
@@ -103,5 +119,6 @@ export class BezierCurve2 extends cc.Component {
             graphics.quadraticCurveTo(p1.x, p1.y, p2.x, p2.y);
         }
         graphics.stroke();
+
     }
 }
