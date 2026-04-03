@@ -58,7 +58,7 @@
     "_groupIndex": 0,
     "groupIndex": 0,
     "autoReleaseAssets": false,
-    "_id": "746741a1-98d0-4aef-8629-fe492d38bd8b"
+    "_id": "6eba8bd4-b259-4752-bca0-303dd73f89fe"
   },
   {
     "__type__": "cc.Node",
@@ -661,7 +661,7 @@
       "__id__": 5
     },
     "_children": [],
-    "_active": false,
+    "_active": true,
     "_components": [
       {
         "__id__": 16
@@ -994,6 +994,7 @@
     "graphics": {
       "__id__": 7
     },
+    "isTwoOrder": false,
     "_id": "70tdNz2d1Oop4Yh1YU0UhW"
   }
 ]

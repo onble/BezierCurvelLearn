@@ -21,6 +21,9 @@ export class BezierCurve2 extends cc.Component {
     @property({ type: cc.Graphics, tooltip: CC_DEV ? '绘制画板' : undefined })
     private graphics: cc.Graphics = null!;
 
+    @property({ tooltip: CC_DEV && '是否为二阶贝塞尔曲线', type: cc.Boolean })
+    private isTwoOrder: boolean = true;
+
     /**
      * 记录上次的开始位置
      */
@@ -53,19 +56,28 @@ export class BezierCurve2 extends cc.Component {
         const startPos = this.startPoint.getPosition();
         const endPos = this.endPoint.getPosition();
         const controlPos1 = this.controlPoint.getPosition();
+        const controlPos2 = this.controlPoint2.getPosition();
 
         // 检查位置是否变化，如果未发生变化，则不绘制内容
-        if (!this._positionsChange(startPos, controlPos1, endPos)) {
+        if (this.isTwoOrder === true && !this._positionsChange(startPos, controlPos1, endPos)) {
+            return;
+        } else if (this.isTwoOrder === false && !this._positionsChange(startPos, controlPos1, controlPos2, endPos)) {
             return;
         }
 
         // 记录当前位置
         this._lastStartPos.set(startPos);
         this._lastControlPos.set(controlPos1);
+        this._lastControl2Pos.set(controlPos2);
         this._lastEndPos.set(endPos);
 
-        // 绘制贝塞尔曲线
-        this.drawBezierPath(startPos, controlPos1, endPos);
+        if (this.isTwoOrder) {
+            // 绘制二阶贝塞尔曲线
+            this.drawBezierPath(startPos, controlPos1, endPos);
+        } else {
+            // 绘制三阶贝塞尔曲线
+            this.drawBezierPath(startPos, controlPos1, controlPos2, endPos);
+        }
 
     }
 
@@ -76,13 +88,17 @@ export class BezierCurve2 extends cc.Component {
      * @param endPos - 当前结束点坐标
      * @returns 如果任意关键点位置发生变化则返回 true，否则返回 false
      */
-    private _positionsChange(startPos: cc.Vec2, controlPos: cc.Vec2, endPos: cc.Vec2): boolean {
+    private _positionsChange(startPos: cc.Vec2, controlPos: cc.Vec2, endPos: cc.Vec2, controlPos2?: cc.Vec2): boolean {
         // 构建当前点和历史点的配对数组
         const positionPairs = [
             [startPos, this._lastStartPos],
             [controlPos, this._lastControlPos],
-            [endPos, this._lastEndPos]
+            [endPos, this._lastEndPos],
         ];
+
+        if (controlPos2) {
+            positionPairs.push([controlPos2, this._lastControl2Pos]);
+        }
 
         // 只要有一对不相等，就返回true
         return positionPairs.some(([current, last]) => !current.equals(last));
@@ -110,6 +126,15 @@ export class BezierCurve2 extends cc.Component {
 
         this.graphics.stroke();
         this.graphics.strokeColor = cc.Color.BLUE;
+
+        if (p3) {
+            // 控制点到终点
+            this.graphics.moveTo(p2.x, p2.y);
+            this.graphics.lineTo(p3.x, p3.y);
+
+            this.graphics.stroke();
+            this.graphics.strokeColor = cc.Color.BLUE;
+        }
 
         this.graphics.strokeColor = cc.Color.GREEN;
         graphics.moveTo(p0.x, p0.y);
