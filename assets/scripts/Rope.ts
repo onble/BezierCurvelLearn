@@ -52,6 +52,17 @@ export class Rope extends cc.Component {
     head: RopeNode = null;
 
     /**
+     * 尾节点（固定端）
+     */
+    tail: RopeNode = null;
+
+    /**
+     * 尾节点在父节点坐标系下的固定位置
+     */
+    @property({ tooltip: '尾节点固定位置（相对父节点）' })
+    tailFixedPos: cc.Vec2 = cc.v2(0, -300);
+
+    /**
      * 基础长度
      */
     baseLen = 20;
@@ -74,6 +85,8 @@ export class Rope extends cc.Component {
             this.nodeArr.push(new RopeNode(0, 0));
         }
         this.head = this.nodeArr[0];
+        this.tail = this.nodeArr[this.count - 1];
+        this.pinTail();
     }
 
     /**
@@ -97,11 +110,16 @@ export class Rope extends cc.Component {
      */
     updatePoints(dt: number) {
         const { nodeArr } = this;
-        const len = nodeArr.length;
-        for (let i = 1; i < len; i++) {
-            const p = nodeArr[i];
-            p.onUpdate(dt);
+        // 头由触摸控制，尾为固定点：中间节点做 Verlet 积分
+        for (let i = 1; i < nodeArr.length - 1; i++) {
+            nodeArr[i].onUpdate(dt);
         }
+    }
+
+    /** 将尾节点钉在 tailFixedPos，并同步上一帧位置（避免 Verlet 漂移） */
+    private pinTail() {
+        this.tail.pos.set(this.tailFixedPos);
+        this.tail.prePos.set(this.tailFixedPos);
     }
 
     /**
@@ -128,11 +146,18 @@ export class Rope extends cc.Component {
                 if (dis > this.baseLen) {
                     const delta = dis - this.baseLen;
                     const dir = dp.normalize().multiplyScalar(delta);
-                    if (i !== 0) {
+                    // 仅头尾两节时无法在不拖动头/尾的情况下满足绳长，跳过该边约束
+                    if (i === 0 && next === this.tail) {
+                        continue;
+                    }
+                    if (i === 0) {
+                        next.pos.addSelf(dir);
+                    } else if (next === this.tail) {
+                        // 尾固定：只把前一节点拉向尾端
+                        p.pos.subtract(dir);
+                    } else {
                         dir.multiplyScalar(0.5);
                         p.pos.subtract(dir);
-                        next.pos.addSelf(dir);
-                    } else {
                         next.pos.addSelf(dir);
                     }
                 }
@@ -168,8 +193,11 @@ export class Rope extends cc.Component {
      * @param dt
      */
     update(dt: number) {
+        this.pinTail();
         this.updatePoints(dt);
+        this.pinTail();
         this.constraint();
+        this.pinTail();
         this.draw();
     }
 }

@@ -661,7 +661,7 @@
     "endNode": {
       "__id__": 11
     },
-    "segmentLength": 4,
+    "segmentLength": 1,
     "useGraphics": true,
     "lineWidth": 10,
     "drawPoints": false,
