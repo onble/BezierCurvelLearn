@@ -21,7 +21,6 @@ class RopeNode {
     }
 
     onUpdate(dt: number) {
-        console.warn("this.pos", this.pos.y, dt);
 
         // 计算速度（这个步长已经是两帧之间的步长了）
         const v = cc.Vec2.subtract(new cc.Vec2(), this.pos, this.prePos);
@@ -42,16 +41,103 @@ const { ccclass, property } = cc._decorator;
 @ccclass
 export class Rope extends cc.Component {
 
-    private graphics: cc.Graphics = null;
+    /**
+ * 节点数组
+ */
+    nodeArr: RopeNode[] = [];
 
-    point: RopeNode = null;
+    /**
+     * 头节点
+     */
+    head: RopeNode = null;
+
+    /**
+     * 基础长度
+     */
+    baseLen = 20;
+
+    /**
+     * 节点数量
+     */
+    count = 30;
+
+    private graphics: cc.Graphics = null;
 
     onLoad() {
         this.graphics = this.node.getComponent(cc.Graphics);
+        this.node.on(cc.Node.EventType.TOUCH_MOVE, this.onTouchMove, this);
     }
 
     start() {
-        this.point = new RopeNode(0, 300);
+        // 初始化节点
+        for (let i = 0; i < this.count; i++) {
+            this.nodeArr.push(new RopeNode(0, 0));
+        }
+        this.head = this.nodeArr[0];
+    }
+
+    /**
+     * 鼠标事件，用于把头节点移到指定位置
+     */
+    onTouchMove = (() => {
+        const tempPos = new cc.Vec3();
+
+        return (e: cc.Event.EventTouch) => {
+            const uiPos = e.getLocation();
+            tempPos.set(cc.v3(uiPos.x, uiPos.y, 0));
+            this.node.parent.convertToNodeSpaceAR(tempPos, tempPos);
+            //  把头部移动到指定位置
+            this.head.pos.set(cc.v2(tempPos.x, tempPos.y));
+        }
+    })()
+
+    /**
+     * 更新节点
+     * @param dt
+     */
+    updatePoints(dt: number) {
+        const { nodeArr } = this;
+        const len = nodeArr.length;
+        for (let i = 1; i < len; i++) {
+            const p = nodeArr[i];
+            p.onUpdate(dt);
+        }
+    }
+
+    /**
+     * 简单的约束
+     */
+    constraint() {
+        const { nodeArr } = this;
+
+        // 多次迭代保证稳定性
+        const time = 20;
+        for (let step = 0; step < time; step++) {
+
+            const len = this.nodeArr.length - 1;
+            for (let i = 0; i < len; i++) {
+
+                const p = nodeArr[i];
+                const next = nodeArr[i + 1];
+
+                // 相邻节点间距
+                const dp = cc.Vec2.subtract(new cc.Vec2(), p.pos, next.pos);
+                const dis = dp.len();
+
+                // 超出基础长度时调整位置
+                if (dis > this.baseLen) {
+                    const delta = dis - this.baseLen;
+                    const dir = dp.normalize().multiplyScalar(delta);
+                    if (i !== 0) {
+                        dir.multiplyScalar(0.5);
+                        p.pos.subtract(dir);
+                        next.pos.addSelf(dir);
+                    } else {
+                        next.pos.addSelf(dir);
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -59,10 +145,22 @@ export class Rope extends cc.Component {
      */
     draw() {
         this.graphics.clear();
-        // 画出点
-        this.graphics.moveTo(this.point.pos.x, this.point.pos.y);
-        this.graphics.circle(this.point.pos.x, this.point.pos.y, 30);
-        this.graphics.fill();
+
+        //  画出绳子
+        this.graphics.moveTo(this.head.pos.x, this.head.pos.y);
+        for (let i = 1; i < this.nodeArr.length; i++) {
+            const node = this.nodeArr[i];
+            this.graphics.lineTo(node.pos.x, node.pos.y);
+        }
+        this.graphics.stroke();
+
+        // 画出节点
+        for (let i = 0; i < this.nodeArr.length; i++) {
+            const node = this.nodeArr[i];
+            this.graphics.moveTo(node.pos.x, node.pos.y);
+            this.graphics.circle(node.pos.x, node.pos.y, 5);
+            this.graphics.fill();
+        }
     }
 
     /**
@@ -70,7 +168,8 @@ export class Rope extends cc.Component {
      * @param dt
      */
     update(dt: number) {
-        this.point.onUpdate(dt);
+        this.updatePoints(dt);
+        this.constraint();
         this.draw();
     }
 }
