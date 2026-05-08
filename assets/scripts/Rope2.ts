@@ -62,14 +62,19 @@ export class Rope2 extends cc.Component {
     @property({ tooltip: '约束迭代次数' })
     constraintIterations = 22;
 
-    @property({ tooltip: '布面填充色' })
-    clothFillColor: cc.Color = cc.color(220, 218, 235, 255);
+    /** 网格线：绿色（与 RopeRow 的描边层对应，仅颜色按需求设） */
+    @property({ tooltip: '网格线颜色（横竖边线），默认绿；alpha=0 不画线' })
+    strokeColor: cc.Color = cc.color(0, 255, 0, 255);
 
-    @property({ tooltip: '上边与轮廓线颜色；alpha=0 不描边' })
-    strokeColor: cc.Color = cc.color(50, 45, 60, 220);
+    /** 节点圆点：红色（与 RopeRow 画质点方式一致，仅填充色为红） */
+    @property({ tooltip: '节点圆点填充色，默认红' })
+    nodeFillColor: cc.Color = cc.color(255, 0, 0, 255);
 
-    @property({ tooltip: '是否绘制质点' })
-    drawParticles = false;
+    @property({ tooltip: '节点圆点半径，与 RopeRow 一致为 5' })
+    nodeRadius = 5;
+
+    @property({ tooltip: '与 Rope.ts 绳线类似：每列垂下的「绳」描边线宽；0 则不画绳线只画网格' })
+    ropeLineWidth = 2;
 
     private graphics: cc.Graphics = null;
 
@@ -77,6 +82,9 @@ export class Rope2 extends cc.Component {
 
     onLoad() {
         this.graphics = this.node.getComponent(cc.Graphics);
+        if (!this.graphics) {
+            this.graphics = this.node.addComponent(cc.Graphics);
+        }
         this.node.on(cc.Node.EventType.TOUCH_START, this.onTouchMove, this);
         this.node.on(cc.Node.EventType.TOUCH_MOVE, this.onTouchMove, this);
     }
@@ -229,7 +237,14 @@ export class Rope2 extends cc.Component {
         }
     }
 
+    /**
+     * 美术与 RopeRow 同一套路：先描边（线），再在结点画圆（点）。
+     * 「面」由横竖网格线围成线框格，不做整块浅色填充。
+     */
     private draw() {
+        if (!this.graphics) {
+            return;
+        }
         this.graphics.clear();
 
         const cols = this.cols;
@@ -238,52 +253,51 @@ export class Rope2 extends cc.Component {
             return;
         }
 
-        this.graphics.fillColor = this.clothFillColor;
-        for (let c = 0; c < cols - 1; c++) {
-            for (let r = 0; r < rows - 1; r++) {
-                const a = this.nodes[c][r].pos;
-                const b = this.nodes[c][r + 1].pos;
-                const d = this.nodes[c + 1][r].pos;
-                const e = this.nodes[c + 1][r + 1].pos;
-                this.graphics.moveTo(a.x, a.y);
-                this.graphics.lineTo(b.x, b.y);
-                this.graphics.lineTo(e.x, e.y);
-                this.graphics.lineTo(d.x, d.y);
-                this.graphics.close();
-                this.graphics.fill();
+        // 与 Rope.ts 一致：每列一条从上到下的折线 = 一根「绳」的视觉效果
+        const lineStroke = this.strokeColor.a > 0 ? this.strokeColor : cc.color(0, 255, 0, 255);
+        if (lineStroke.a > 0) {
+            this.graphics.strokeColor = lineStroke;
+            if (this.ropeLineWidth > 0) {
+                this.graphics.lineWidth = this.ropeLineWidth;
+                for (let c = 0; c < cols; c++) {
+                    const col = this.nodes[c];
+                    this.graphics.moveTo(col[0].pos.x, col[0].pos.y);
+                    for (let r = 1; r < rows; r++) {
+                        this.graphics.lineTo(col[r].pos.x, col[r].pos.y);
+                    }
+                    this.graphics.stroke();
+                }
             }
-        }
 
-        if (this.strokeColor.a > 0) {
-            this.graphics.strokeColor = this.strokeColor;
-            this.graphics.lineWidth = 2;
-            const top = this.nodes.map(col => col[0].pos);
-            this.graphics.moveTo(top[0].x, top[0].y);
-            for (let i = 1; i < top.length; i++) {
-                this.graphics.lineTo(top[i].x, top[i].y);
-            }
-            this.graphics.stroke();
-
-            this.graphics.lineWidth = 1;
-            for (let c = 0; c < cols; c++) {
-                const col = this.nodes[c];
-                this.graphics.moveTo(col[0].pos.x, col[0].pos.y);
-                for (let r = 1; r < rows; r++) {
-                    this.graphics.lineTo(col[r].pos.x, col[r].pos.y);
+            // 网格横线（细线）；绳线宽为 0 时补画细竖线
+            this.graphics.lineWidth = 10;
+            for (let r = 0; r < rows; r++) {
+                this.graphics.moveTo(this.nodes[0][r].pos.x, this.nodes[0][r].pos.y);
+                for (let c = 1; c < cols; c++) {
+                    const p = this.nodes[c][r].pos;
+                    this.graphics.lineTo(p.x, p.y);
                 }
                 this.graphics.stroke();
             }
+            if (this.ropeLineWidth <= 0) {
+                for (let c = 0; c < cols; c++) {
+                    this.graphics.moveTo(this.nodes[c][0].pos.x, this.nodes[c][0].pos.y);
+                    for (let r = 1; r < rows; r++) {
+                        const p = this.nodes[c][r].pos;
+                        this.graphics.lineTo(p.x, p.y);
+                    }
+                    this.graphics.stroke();
+                }
+            }
         }
 
-        if (this.drawParticles) {
-            for (let c = 0; c < cols; c++) {
-                for (let r = 0; r < rows; r++) {
-                    const p = this.nodes[c][r].pos;
-                    const corner = (r === 0 && (c === 0 || c === cols - 1));
-                    this.graphics.fillColor = corner ? cc.Color.YELLOW : cc.Color.WHITE;
-                    this.graphics.circle(p.x, p.y, 3);
-                    this.graphics.fill();
-                }
+        this.graphics.fillColor = this.nodeFillColor;
+        const nr = this.nodeRadius;
+        for (let c = 0; c < cols; c++) {
+            for (let r = 0; r < rows; r++) {
+                const p = this.nodes[c][r].pos;
+                this.graphics.circle(p.x, p.y, nr);
+                this.graphics.fill();
             }
         }
     }

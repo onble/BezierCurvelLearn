@@ -58,7 +58,7 @@
     "_groupIndex": 0,
     "groupIndex": 0,
     "autoReleaseAssets": false,
-    "_id": "2d95b5da-3fd4-4d6d-8223-80f7e1621f66"
+    "_id": "6a8449ce-2c01-481e-95d5-136b8cd15c6c"
   },
   {
     "__type__": "cc.Node",
@@ -428,40 +428,14 @@
     "_id": "15hMiU7/9AXrm2hDME39rz"
   },
   {
-    "__type__": "824dfhuIRVL5ohbFTUBlU7I",
+    "__type__": "a5c10cGoY9IKrFgTNsBbeaw",
     "_name": "",
     "_objFlags": 0,
     "node": {
       "__id__": 6
     },
     "_enabled": true,
-    "cols": 12,
-    "rows": 24,
-    "topLeftPos": {
-      "__type__": "cc.Vec2",
-      "x": -200,
-      "y": 200
-    },
-    "baseLen": 20,
-    "horizontalBaseLen": 22,
-    "constraintIterations": 22,
-    "strokeColor": {
-      "__type__": "cc.Color",
-      "r": 255,
-      "g": 0,
-      "b": 0,
-      "a": 255
-    },
-    "nodeFillColor": {
-      "__type__": "cc.Color",
-      "r": 0,
-      "g": 255,
-      "b": 82,
-      "a": 255
-    },
-    "nodeRadius": 5,
-    "ropeLineWidth": 10,
-    "_id": "acXlqAcNxMu4zZNoec+Wwv"
+    "_id": "17XSOyzoNBt6UFV3FBmTF3"
   },
   {
     "__type__": "cc.Sprite",
